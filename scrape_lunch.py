@@ -2,6 +2,8 @@ import os
 import requests
 import json
 import re
+import time
+import urllib.parse
 from html.parser import HTMLParser
 
 # Configuration
@@ -112,18 +114,59 @@ def scrape_data():
         data = []
         min_len = min(len(names), len(addrs), len(zips), len(cities))
         
+        print(f"Enriching {min_len} items (Geocoding)... this may take a while.")
+        
         for i in range(min_len):
             website = urls[i] if i < len(urls) else ""
             if "javascript:" in website: website = "" 
             
+            # Basic Item
             item = {
                 'Restaurant': names[i].strip(),
                 'Adresse': addrs[i].strip(),
                 'PLZ': zips[i].strip(),
                 'Ort': cities[i].strip(),
-                'Website': website.strip()
+                'Website': website.strip(),
+                'cuisine': None,
+                'lat': None,
+                'lon': None,
+                'walkingTime': 999 
             }
+            
+            # Enrich
+            try:
+                query = f"{item['Adresse']} {item['Ort']}"
+                # Use Photon API
+                geo_url = f"https://photon.komoot.io/api/?q={urllib.parse.quote(query)}&limit=1"
+                geo_res = requests.get(geo_url, timeout=5)
+                if geo_res.status_code == 200:
+                    geo_data = geo_res.json()
+                    if geo_data['features']:
+                        feat = geo_data['features'][0]
+                        item['lon'] = feat['geometry']['coordinates'][0]
+                        item['lat'] = feat['geometry']['coordinates'][1]
+                        
+                        # Extract Cuisine
+                        props = feat['properties']
+                        c_val = props.get('cuisine')
+                        if not c_val:
+                            osm_val = props.get('osm_value')
+                            if osm_val and osm_val not in ['yes', 'restaurant', 'fast_food', 'cafe', 'bar']:
+                                c_val = osm_val
+                        
+                        item['cuisine'] = c_val.capitalize() if c_val else "International"
+                    else:
+                        item['cuisine'] = "International"
+            except Exception as err:
+                print(f"Enrichment error for {item['Restaurant']}: {err}")
+                item['cuisine'] = "International"
+
             data.append(item)
+            # Rate limit compliance (Photon is generous but let's be safe)
+            time.sleep(0.5)
+            
+            if i % 10 == 0:
+                print(f"Processed {i}/{min_len}...")
             
         return data
 
