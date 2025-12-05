@@ -92,12 +92,12 @@ def scrape_data():
         
         form_data['__EVENTTARGET'] = ddl_name
         form_data['__EVENTARGUMENT'] = ''
-        form_data[ddl_name] = '500' # Request 500 items
+        form_data[ddl_name] = '3000' # Request 3000 items (should cover most relevant areas)
         
         # Remove button clicks if any were captured (usually not in hidden fields)
         
-        print("Requesting 500 items (PostBack)...")
-        res_post = session.post(URL, data=form_data, timeout=60)
+        print("Requesting 3000 items (PostBack)...")
+        res_post = session.post(URL, data=form_data, timeout=90) # Increased timeout
         res_post.raise_for_status()
         html = res_post.text
         
@@ -162,10 +162,10 @@ def scrape_data():
                 item['cuisine'] = "International"
 
             data.append(item)
-            # Rate limit compliance (Photon is generous but let's be safe)
-            time.sleep(0.5)
+            # Faster Rate Limit
+            time.sleep(0.1)
             
-            if i % 10 == 0:
+            if i % 100 == 0:
                 print(f"Processed {i}/{min_len}...")
             
         return data
