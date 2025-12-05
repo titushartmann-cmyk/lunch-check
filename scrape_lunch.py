@@ -52,29 +52,59 @@ class LunchTableParser(HTMLParser):
         if self.in_cell:
             self.cell_buffer += data
 
+def get_form_data(html):
+    """Extracts all form fields needed for ASP.NET PostBack."""
+    data = {}
+    # Extract basic inputs
+    inputs = re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', html)
+    for name, value in inputs:
+        data[name] = value
+        
+    # Extract hidden inputs that might have empty values not caught above (regex improvements)
+    # Simple regex for inputs
+    # We specifically need __VIEWSTATE, __VIEWSTATEGENERATOR, __EVENTVALIDATION
+    for key in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
+        if key not in data:
+            match = re.search(r'id="' + key + r'" value="(.*?)"', html)
+            if match:
+                data[key] = match.group(1)
+            
+    return data
+
 def scrape_data():
     print(f"Fetching data from {URL}...")
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0 (compatible; LunchScraper/1.0)'})
+    
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (compatible; LunchScraper/1.0)'}
-        res = requests.get(URL, headers=headers, timeout=30)
+        # 1. Initial GET to get ViewState
+        res = session.get(URL, timeout=30)
         res.raise_for_status()
-        html = res.text
         
+        # 2. Prepare POST for 500 items
+        form_data = get_form_data(res.text)
+        
+        # Determine the uniqueID of the dropdown. From debug analysis:
+        # name="ctl00$SheetContentPlaceHolder$ctl00$ctl01$ddlPageSize"
+        ddl_name = "ctl00$SheetContentPlaceHolder$ctl00$ctl01$ddlPageSize"
+        
+        form_data['__EVENTTARGET'] = ddl_name
+        form_data['__EVENTARGUMENT'] = ''
+        form_data[ddl_name] = '500' # Request 500 items
+        
+        # Remove button clicks if any were captured (usually not in hidden fields)
+        
+        print("Requesting 500 items (PostBack)...")
+        res_post = session.post(URL, data=form_data, timeout=60)
+        res_post.raise_for_status()
+        html = res_post.text
+        
+        # 3. Extract Data from POST response
         # Regex extraction based on ASP.NET IDs
-        # Names: ..._Label3
-        # Addr: ..._Label5
-        # Zip: ..._Label7
-        # City: ..._Label8
-        # Url: ..._LinkButton1
-        
-        # check basic count
         names = re.findall(r'id=".*?_Label3">(.*?)</span>', html)
         addrs = re.findall(r'id=".*?_Label5">(.*?)</span>', html)
         zips = re.findall(r'id=".*?_Label7">(.*?)</span>', html)
         cities = re.findall(r'id=".*?_Label8">(.*?)</span>', html)
-        
-        # URLs are trickier because they might be empty or have different attributes
-        # We look for the anchor tag with LinkButton1 ID and capture its content
         urls = re.findall(r'id=".*?_LinkButton1".*?>(.*?)</a>', html)
         
         print(f"Found {len(names)} items.")
@@ -83,9 +113,8 @@ def scrape_data():
         min_len = min(len(names), len(addrs), len(zips), len(cities))
         
         for i in range(min_len):
-            # Clean up URL (sometimes it's empty)
             website = urls[i] if i < len(urls) else ""
-            if "javascript:" in website: website = "" # Garbage check
+            if "javascript:" in website: website = "" 
             
             item = {
                 'Restaurant': names[i].strip(),
