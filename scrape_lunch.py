@@ -117,8 +117,12 @@ def scrape_data():
         print(f"Enriching {min_len} items (Geocoding)... this may take a while.")
         
         for i in range(min_len):
+            # Clean up Website URL
             website = urls[i] if i < len(urls) else ""
+            website = website.strip()
             if "javascript:" in website: website = "" 
+            if website and not website.startswith('http'):
+                website = "https://" + website
             
             # Basic Item
             item = {
@@ -126,7 +130,7 @@ def scrape_data():
                 'Adresse': addrs[i].strip(),
                 'PLZ': zips[i].strip(),
                 'Ort': cities[i].strip(),
-                'Website': website.strip(),
+                'Website': website,
                 'cuisine': None,
                 'lat': None,
                 'lon': None,
@@ -146,14 +150,33 @@ def scrape_data():
                         item['lon'] = feat['geometry']['coordinates'][0]
                         item['lat'] = feat['geometry']['coordinates'][1]
                         
-                        # Extract Cuisine
+                        # Extract Cuisine - STRICT MODE
                         props = feat['properties']
                         c_val = props.get('cuisine')
-                        if not c_val:
-                            osm_val = props.get('osm_value')
-                            if osm_val and osm_val not in ['yes', 'restaurant', 'fast_food', 'cafe', 'bar']:
-                                c_val = osm_val
                         
+                        # Valid cuisines allowed list
+                        allowed = ['italian', 'chinese', 'asian', 'thai', 'vietnamese', 'indian', 'japanese', 
+                                   'french', 'burger', 'pizza', 'kebab', 'sushi', 'mexican', 'lebanese', 
+                                   'greek', 'spanish', 'turkish', 'regional', 'mediterranean', 'vegan', 
+                                   'vegetarian', 'steak_house', 'fish_and_chips', 'noodle', 'cafe', 'bar']
+                        
+                        # If cuisine is not explicit or not allowed, check osm_value if it looks like food
+                        if not c_val or c_val.lower() not in allowed:
+                            osm_val = props.get('osm_value')
+                            if osm_val in ['restaurant', 'fast_food', 'cafe', 'pub', 'bar']:
+                                c_val = osm_val if not c_val else c_val # keep existing if valid-ish
+                            else:
+                                c_val = None # Discard non-food types like dentist, shoe_repair
+                        
+                        # Final check
+                        if c_val and c_val.lower() in ['yes', 'restaurant', 'fast_food']:
+                             # Too generic? check name?
+                             if "pizza" in item['Restaurant'].lower(): c_val = "Pizza"
+                             elif "burger" in item['Restaurant'].lower(): c_val = "Burger"
+                             elif "sushi" in item['Restaurant'].lower(): c_val = "Sushi"
+                             elif "thai" in item['Restaurant'].lower(): c_val = "Thai"
+                             else: c_val = "International"
+
                         item['cuisine'] = c_val.capitalize() if c_val else "International"
                     else:
                         item['cuisine'] = "International"
