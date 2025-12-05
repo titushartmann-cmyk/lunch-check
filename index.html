@@ -341,10 +341,21 @@
             document.querySelector('#stats').style.display = 'inline-block';
             updateTable();
 
-            // Auto-run enrichment if address is empty (just to get cuisines) 
-            // Or wait for user? Let's prompt user or auto-enrich top 50
-            document.getElementById('statusBar').textContent = `Loaded ${appData.length} places. Enter address to calc time.`;
-            document.querySelector('#stats').textContent = `${appData.length} Places`;
+            // Try to load state
+            const savedAddr = localStorage.getItem('lunch_address');
+            const savedCoords = localStorage.getItem('lunch_coords');
+
+            if (savedAddr && savedCoords) {
+                document.getElementById('addressInput').value = savedAddr;
+                try {
+                    userCoords = JSON.parse(savedCoords);
+                    updateDistances();
+                    document.getElementById('statusBar').textContent = `Restored location: ${savedAddr}`;
+                } catch (e) { console.error(e); }
+            } else {
+                document.getElementById('statusBar').textContent = `Loaded ${appData.length} places. Enter address to calc time.`;
+                document.querySelector('#stats').textContent = `${appData.length} Places`;
+            }
 
             // Start background geocoding for rows without lat/lon (throttled)
             processQueue();
@@ -367,6 +378,11 @@
                 if (data.features.length) {
                     const c = data.features[0].geometry.coordinates;
                     userCoords = { lon: c[0], lat: c[1] };
+
+                    // Save state
+                    localStorage.setItem('lunch_address', address);
+                    localStorage.setItem('lunch_coords', JSON.stringify(userCoords));
+
                     document.getElementById('statusBar').textContent = `Location found. Updating distances...`;
                     updateDistances();
                 } else {
