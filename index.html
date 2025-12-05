@@ -281,11 +281,9 @@
             </div>
         </header>
 
-        <!-- Upload Screen -->
-        <div id="uploadScreen" class="file-drop-zone" onclick="document.getElementById('fileInput').click()">
-            <h3>Drop your Lunch Check CSV here</h3>
-            <p>or click to browse</p>
-            <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFile(this.files)">
+        <!-- Status Message -->
+        <div id="statusMessage" class="file-drop-zone" style="cursor: default; border-style: solid;" hidden>
+            <h3>Initializing...</h3>
         </div>
 
         <!-- Data Table -->
@@ -329,77 +327,16 @@
                 }));
                 console.log("Found pre-loaded data:", appData.length);
                 initApp();
+            } else {
+                document.getElementById('statusMessage').hidden = false;
+                document.getElementById('statusMessage').textContent = "Waiting for cloud data... (Check back in 5 min)";
             }
         });
 
-        // Drag & Drop
-        const dropZone = document.getElementById('uploadScreen');
+        // drag & drop logic removed
 
-        // ... (lines 330-479 unchanged in replacement logic, simplified here for context match)
-        // Actually, since I can't skip lines easily without `multi_replace`, 
-        // I will do two separate edits if needed, or just include the Init block update first.
-        // Wait, replace_file_content replaces a CONTIGUOUS block.
-        // I will just replace the Init block first.
-
-        // ...
-
-
-        // Drag & Drop
-        const dropZone = document.getElementById('uploadScreen');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.add('active'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.remove('active'), false);
-        });
-
-        dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files), false);
-
-        function handleFile(files) {
-            if (!files.length) return;
-            const file = files[0];
-
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function (results) {
-                    if (results.data && results.data.length > 0) {
-                        // Normalize keys if needed or just assume structure
-                        appData = results.data.map(item => ({
-                            ...item,
-                            // Clean keys
-                            Restaurant: item.Restaurant || item.Name || "Unknown",
-                            Adresse: item.Adresse || item.Address || "",
-                            PLZ: item.PLZ || item.Zip || "",
-                            Ort: item.Ort || item.City || "",
-                            cuisine: null,
-                            lat: null,
-                            lon: null,
-                            walkingTime: 999
-                        }));
-
-                        initApp();
-                    }
-                },
-                error: function (err) {
-                    alert("Error parsing CSV: " + err.message);
-                }
-            });
-        }
 
         function initApp() {
-            document.getElementById('uploadScreen').hidden = true;
             document.getElementById('appContent').hidden = false;
             document.querySelector('#stats').style.display = 'inline-block';
             updateTable();
