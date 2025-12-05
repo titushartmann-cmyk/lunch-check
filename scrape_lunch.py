@@ -6,7 +6,7 @@ from html.parser import HTMLParser
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-APP_FILE = os.path.join(BASE_DIR, "lunch_app.html")
+APP_FILE = os.path.join(BASE_DIR, "index.html")
 URL = "https://directory.lunch-check.ch/LunchCheck/LC_Directory.aspx"
 
 class LunchTableParser(HTMLParser):
