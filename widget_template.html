@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunch List</title>
+    <style>
+        :root {
+            --primary: #FF4757;
+            --secondary: #2F3542;
+            --bg: #F8F9FA;
+            --surface: #FFFFFF;
+            --border: #E1E4E8;
+            --text: #2F3542;
+            --text-light: #747D8C;
+            --radius: 8px;
+            --header-bg: #F1F2F6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            width: 300px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th {
+            background-color: var(--header-bg);
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 2px solid var(--border);
+        }
+
+        th:hover {
+            background-color: #E6E8EB;
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #FAFAFA;
+        }
+
+        .col-restaurant {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .col-time {
+            font-family: 'SF Mono', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .action-link {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-right: 1rem;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div>
+                <h1>Lunch Options</h1>
+                <small style="color: var(--text-light)">Found {{ items_count }} places • Updated {{ generation_date
+                    }}</small>
+            </div>
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Filter by name, address..." onkeyup="filterTable()">
+            </div>
+        </header>
+
+        <div class="table-container">
+            <table id="lunchTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Restaurant ↕</th>
+                        <th onclick="sortTable(1)">Address ↕</th>
+                        <th onclick="sortTable(2)">Walking Time ↕</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="col-restaurant">{{ item.Restaurant }}</td>
+                        <td>{{ item.Adresse }}, {{ item.PLZ }}</td>
+                        <td class="col-time" data-val="{{ item.walking_time_raw }}">{{ item.walking_time }}</td>
+                        <td>
+                            <a href="{{ item.Website }}" target="_blank" class="action-link">Website</a>
+                            <a href="{{ item.maps_url }}" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const input = document.getElementById("searchInput");
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById("lunchTable");
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let visible = false;
+                const tds = tr[i].getElementsByTagName("td");
+                for (let j = 0; j < tds.length; j++) {
+                    if (tds[j]) {
+                        const txtValue = tds[j].textContent || tds[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            visible = true;
+                            break;
+                        }
+                    }
+                }
+                tr[i].style.display = visible ? "" : "none";
+            }
+        }
+
+        function sortTable(n) {
+            const table = document.getElementById("lunchTable");
+            let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            switching = true;
+            dir = "asc";
+
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                    let xVal = x.getAttribute('data-val') || x.innerHTML.toLowerCase();
+                    let yVal = y.getAttribute('data-val') || y.innerHTML.toLowerCase();
+
+                    let xNum = parseFloat(xVal);
+                    let yNum = parseFloat(yVal);
+                    if (!isNaN(xNum) && !isNaN(yNum)) {
+                        xVal = xNum;
+                        yVal = yNum;
+                    }
+
+                    if (dir == "asc") {
+                        if (xVal > yVal) { shouldSwitch = true; break; }
+                    } else if (dir == "desc") {
+                        if (xVal < yVal) { shouldSwitch = true; break; }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>

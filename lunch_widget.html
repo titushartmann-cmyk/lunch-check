@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunch List</title>
+    <style>
+        :root {
+            --primary: #FF4757;
+            --secondary: #2F3542;
+            --bg: #F8F9FA;
+            --surface: #FFFFFF;
+            --border: #E1E4E8;
+            --text: #2F3542;
+            --text-light: #747D8C;
+            --radius: 8px;
+            --header-bg: #F1F2F6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            width: 300px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th {
+            background-color: var(--header-bg);
+            color: var(--text-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 2px solid var(--border);
+        }
+
+        th:hover {
+            background-color: #E6E8EB;
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #FAFAFA;
+        }
+
+        .col-restaurant {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .col-time {
+            font-family: 'SF Mono', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .action-link {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-right: 1rem;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div>
+                <h1>Lunch Options</h1>
+                <small style="color: var(--text-light)">Found 50 places • Updated {{ generation_date
+                    }}</small>
+            </div>
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Filter by name, address..." onkeyup="filterTable()">
+            </div>
+        </header>
+
+        <div class="table-container">
+            <table id="lunchTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Restaurant ↕</th>
+                        <th onclick="sortTable(1)">Address ↕</th>
+                        <th onclick="sortTable(2)">Walking Time ↕</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td class="col-restaurant">01 Bar</td>
+                        <td>Köngengasse 2/Limmatquai 86, 8001</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="www.01bar.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=K%C3%B6ngengasse%202/Limmatquai%2086%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">1001</td>
+                        <td>Niederdorfstrasse 4, 8001</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Niederdorfstrasse%204%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">1001 Take Away</td>
+                        <td>Niederdorfstrasse 49, 8001</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Niederdorfstrasse%2049%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">107.zuerich</td>
+                        <td>Weinbergstrasse 107, 8006</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Weinbergstrasse%20107%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">169 West</td>
+                        <td>Weststrasse 169, 8003</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.169west.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Weststrasse%20169%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">1KOMMA7</td>
+                        <td>Claridenstrasse 8, 8002</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="https://1komma7.ch/" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Claridenstrasse%208%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">2.Akt</td>
+                        <td>Selnaustrasse 2, 8001</td>
+                        <td class="col-time" data-val="1">1 min</td>
+                        <td>
+                            <a href="www.2akt.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Selnaustrasse%202%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">20/20 by Mövenpick Wein Bar</td>
+                        <td>Nüschelerstrasse 1, 8001</td>
+                        <td class="col-time" data-val="0">0 min</td>
+                        <td>
+                            <a href="www.wein-bar.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=N%C3%BCschelerstrasse%201%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">3 Mens Kebab</td>
+                        <td>Freischützgasse 1, 8004</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.3menskebab.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Freisch%C3%BCtzgasse%201%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">4. Akt</td>
+                        <td>Heinrichstrasse 262, 8005</td>
+                        <td class="col-time" data-val="6">6 min</td>
+                        <td>
+                            <a href="www.4akt.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Heinrichstrasse%20262%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">4Leoni dal 1995</td>
+                        <td>Luisenstrasse 43, 8005</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="www.4leoni.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Luisenstrasse%2043%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">99</td>
+                        <td>Bederstrasse 99, 8002</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.ristorante-99.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Bederstrasse%2099%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">A Fatt</td>
+                        <td>Limmatstrasse 189, 8005</td>
+                        <td class="col-time" data-val="5">5 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Limmatstrasse%20189%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">A1 Move (Eldora)</td>
+                        <td>Bändliweg 20, 8048</td>
+                        <td class="col-time" data-val="10">10 min</td>
+                        <td>
+                            <a href="www.eldora-a1move.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=B%C3%A4ndliweg%2020%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Aargauerhof</td>
+                        <td>Hohlstrasse 43, 8004</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.restaurant-aargauerhof.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Hohlstrasse%2043%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Acasa Suites</td>
+                        <td>Binzmühlestrasse 72, 8050</td>
+                        <td class="col-time" data-val="10">10 min</td>
+                        <td>
+                            <a href="https://acasasuites.com" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Binzm%C3%BChlestrasse%2072%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Ach'i</td>
+                        <td>Brauerstrasse 4, 8004</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.achi.restaurant.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Brauerstrasse%204%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Action Burger</td>
+                        <td>Dubsstrasse 23, 8003</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.actionburger.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Dubsstrasse%2023%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Addis Abeba</td>
+                        <td>Strassburgstrasse 17, 8004</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="https://addisabebazurich.ch/" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Strassburgstrasse%2017%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Adlisberg</td>
+                        <td>Adlisbergstrasse 75, 8044</td>
+                        <td class="col-time" data-val="9">9 min</td>
+                        <td>
+                            <a href="www.adlisberg.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Adlisbergstrasse%2075%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">AFGHAN ANAR</td>
+                        <td>Fierzgasse 22, 8005</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Fierzgasse%2022%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Afghan Anar</td>
+                        <td>Hottingenstrasse 27, 8032</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.afghananar.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Hottingenstrasse%2027%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">African Queen</td>
+                        <td>Stampfenbachstrasse 70, 8006</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.african-queen.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Stampfenbachstrasse%2070%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Ah-Hua</td>
+                        <td>Ankerstrasse 110, 8004</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.ah-hua.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Ankerstrasse%20110%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">AHOI! Ladencafé</td>
+                        <td>Schiffbaustrasse 9b, 8005</td>
+                        <td class="col-time" data-val="7">7 min</td>
+                        <td>
+                            <a href="www.ahoi-ladencafe.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Schiffbaustrasse%209b%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">AIR</td>
+                        <td>Check-in 2, 8058</td>
+                        <td class="col-time" data-val="38">38 min</td>
+                        <td>
+                            <a href="www.air-zrh.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Check-in%202%2C%20Z%C3%BCrich-Flughafen" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">AIR Bakery</td>
+                        <td>Check-in 2, 8058</td>
+                        <td class="col-time" data-val="38">38 min</td>
+                        <td>
+                            <a href="www.air-zrh.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Check-in%202%2C%20Z%C3%BCrich-Flughafen" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Akaraka</td>
+                        <td>Bäckerstrasse 30, 8004</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=B%C3%A4ckerstrasse%2030%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Akaraka to go</td>
+                        <td>St. Jakobstrasse 7, 8004</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.akaraka.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=St.%20Jakobstrasse%207%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Akaras</td>
+                        <td>Lutherstrasse 2, 8004</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.akaras.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Lutherstrasse%202%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Akt</td>
+                        <td>Niederdorfstrasse 64, 8001</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="www.akt-zuerich.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Niederdorfstrasse%2064%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Al Forno</td>
+                        <td>Universitätsstrasse 40, 8006</td>
+                        <td class="col-time" data-val="0">0 min</td>
+                        <td>
+                            <a href="https://de-de.facebook.com/RistoranteAlFornoDaAngelo" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Universit%C3%A4tsstrasse%2040%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Al Mouchtar</td>
+                        <td>Badenerstrasse 541, 8048</td>
+                        <td class="col-time" data-val="6">6 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Badenerstrasse%20541%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Al paso</td>
+                        <td>Spitalgasse 12, 8001</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.alpaso.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Spitalgasse%2012%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Al Ventotto</td>
+                        <td>Schaffhauserstrasse 29, 8006</td>
+                        <td class="col-time" data-val="5">5 min</td>
+                        <td>
+                            <a href="www.al-ventotto.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Schaffhauserstrasse%2029%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">ALBA Sourdough</td>
+                        <td>Birmensdorferstrasse 431, 8055</td>
+                        <td class="col-time" data-val="6">6 min</td>
+                        <td>
+                            <a href="https://www.alba.pizza/" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Birmensdorferstrasse%20431%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">ALBA Sourdough</td>
+                        <td>Stampfenbachstrasse 68, 8006</td>
+                        <td class="col-time" data-val="3">3 min</td>
+                        <td>
+                            <a href="https://www.alba.pizza/" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Stampfenbachstrasse%2068%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alba Sourdough Pizza</td>
+                        <td>Bremgartnerstrasse 70, 8003</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="https://www.alba.pizza.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Bremgartnerstrasse%2070%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Albanesi Pregiata Forneria</td>
+                        <td>Bahnhofplatz 12, 8001</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.albanesigroup.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Bahnhofplatz%2012%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Albis Beck Fellenberg</td>
+                        <td>Fellenbergstrasse 27, 8047</td>
+                        <td class="col-time" data-val="7">7 min</td>
+                        <td>
+                            <a href="www.albisbeck.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Fellenbergstrasse%2027%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Albis Beck Frankental</td>
+                        <td>Konrad-Ilg-Strasse 4, 8049</td>
+                        <td class="col-time" data-val="12">12 min</td>
+                        <td>
+                            <a href="www.albisbeck.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Konrad-Ilg-Strasse%204%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alexi's</td>
+                        <td>Niederdorfstrasse 40, 8001</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.alexis-bar.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Niederdorfstrasse%2040%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">all about crêpe</td>
+                        <td>Seestrasse 17, 8002</td>
+                        <td class="col-time" data-val="2">2 min</td>
+                        <td>
+                            <a href="www.allaboutcrepe.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Seestrasse%2017%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Allegria (Gesundheitszentrum Käferberg)</td>
+                        <td>Emil-Klöti-Strasse 25, 8037</td>
+                        <td class="col-time" data-val="10">10 min</td>
+                        <td>
+                            <a href="" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Emil-Kl%C3%B6ti-Strasse%2025%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Allegro</td>
+                        <td>Mutschellenstrasse 137, 8038</td>
+                        <td class="col-time" data-val="7">7 min</td>
+                        <td>
+                            <a href="www.allegrorestaurant.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Mutschellenstrasse%20137%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Almodobar</td>
+                        <td>Bleicherweg 68, 8002</td>
+                        <td class="col-time" data-val="1">1 min</td>
+                        <td>
+                            <a href="www.almodobar.com" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Bleicherweg%2068%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alnatura (nur Food Artikel / bediente Kassen</td>
+                        <td>Kreuzplatz 20, 8008</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="www.alnatura.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Kreuzplatz%2020%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alnatura (nur Food Artikel / bediente Kassen</td>
+                        <td>Löwenstrasse 31, 8001</td>
+                        <td class="col-time" data-val="1">1 min</td>
+                        <td>
+                            <a href="www.alnatura.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=L%C3%B6wenstrasse%2031%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alnatura (nur Food Artikel / bediente Kassen</td>
+                        <td>Limmatplatz, 8005</td>
+                        <td class="col-time" data-val="4">4 min</td>
+                        <td>
+                            <a href="www.alnatura.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Limmatplatz%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="col-restaurant">Alnatura (nur Food Artikel / bediente Kassen</td>
+                        <td>Kappenbühlweg 5, 8049</td>
+                        <td class="col-time" data-val="11">11 min</td>
+                        <td>
+                            <a href="www.alnatura.ch" target="_blank" class="action-link">Website</a>
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=Kappenb%C3%BChlweg%205%2C%20Z%C3%BCrich" target="_blank" class="action-link">Map</a>
+                        </td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const input = document.getElementById("searchInput");
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById("lunchTable");
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let visible = false;
+                const tds = tr[i].getElementsByTagName("td");
+                for (let j = 0; j < tds.length; j++) {
+                    if (tds[j]) {
+                        const txtValue = tds[j].textContent || tds[j].innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            visible = true;
+                            break;
+                        }
+                    }
+                }
+                tr[i].style.display = visible ? "" : "none";
+            }
+        }
+
+        function sortTable(n) {
+            const table = document.getElementById("lunchTable");
+            let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            switching = true;
+            dir = "asc";
+
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                    let xVal = x.getAttribute('data-val') || x.innerHTML.toLowerCase();
+                    let yVal = y.getAttribute('data-val') || y.innerHTML.toLowerCase();
+
+                    let xNum = parseFloat(xVal);
+                    let yNum = parseFloat(yVal);
+                    if (!isNaN(xNum) && !isNaN(yNum)) {
+                        xVal = xNum;
+                        yVal = yNum;
+                    }
+
+                    if (dir == "asc") {
+                        if (xVal > yVal) { shouldSwitch = true; break; }
+                    } else if (dir == "desc") {
+                        if (xVal < yVal) { shouldSwitch = true; break; }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>

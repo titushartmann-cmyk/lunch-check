@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunch Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #FF4757;
+            --primary-hover: #FF6B81;
+            --bg: #F0F2F5;
+            --surface: #FFFFFF;
+            --text: #2D3436;
+            --text-light: #636E72;
+            --border: #DFE6E9;
+            --success: #00B894;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: calc(100vh - 4rem);
+        }
+
+        /* Header Area */
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary), #FF6B81);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Inputs */
+        input[type="text"] {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+            background: #FAFAFA;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background: #FFF;
+            box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .address-box {
+            width: 300px;
+        }
+
+        /* Buttons & File Input */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, opacity 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            padding: 2rem;
+            text-align: center;
+            border-radius: var(--radius);
+            margin: 2rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .file-drop-zone.active {
+            border-color: var(--primary);
+            background: rgba(255, 71, 87, 0.05);
+        }
+
+        .file-drop-zone h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text);
+        }
+
+        .file-drop-zone p {
+            margin: 0;
+            color: var(--text-light);
+        }
+
+        /* Table */
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1000px;
+        }
+
+        th {
+            background: #F8F9FA;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            border-bottom: 2px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background: #EEF0F3;
+            color: var(--primary);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+            background: white;
+            transition: background 0.2s;
+        }
+
+        tr:hover td {
+            background: #FAFAFA;
+        }
+
+        .col-restaurant {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-light);
+            background: #F0F2F5;
+        }
+
+        .tag.tag-cuisine {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .tag.tag-enrich {
+            background: #D1E7DD;
+            color: #0F5132;
+        }
+
+        .time-badge {
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .actions a {
+            text-decoration: none;
+            margin-right: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .actions a:hover {
+            color: var(--primary);
+        }
+
+        .status-bar {
+            padding: 0.5rem 2rem;
+            background: #F8F9FA;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-light);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>Lunch Explorer</h1>
+                <div id="stats" class="tag" style="display:none">0 Loaded</div>
+            </div>
+
+            <div class="controls-row">
+                <input type="text" id="addressInput" class="address-box"
+                    placeholder="📍 Your location (e.g. Paradeplatz)">
+                <button class="btn btn-primary" onclick="enrichData()">
+                    Update Distances
+                </button>
+                <div style="width: 1rem;"></div>
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 Filter by name, cuisine..."
+                    onkeyup="filterTable()">
+            </div>
+        </header>
+
+        <!-- Upload Screen -->
+        <div id="uploadScreen" class="file-drop-zone" onclick="document.getElementById('fileInput').click()">
+            <h3>Drop your Lunch Check CSV here</h3>
+            <p>or click to browse</p>
+            <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFile(this.files)">
+        </div>
+
+        <!-- Data Table -->
+        <div id="appContent" class="table-wrapper" hidden>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Restaurant ↕</th>
+                        <th onclick="sortTable(1)">Address ↕</th>
+                        <th onclick="sortTable(2)">Cuisine ↕</th>
+                        <th onclick="sortTable(3)">Walking Time ↕</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Rows injected here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            Ready to start.
+        </div>
+    </div>
+
+    <script>
+        let appData = [{"Restaurant": "\7 Town House & Bottega del Gusto Locarno", "Adresse": "Largo Franco Zorzi 14", "PLZ": "6600", "Ort": "Locarno", "Website": ""}, {"Restaurant": "01 Bar", "Adresse": "Köngengasse 2/Limmatquai 86", "PLZ": "8001", "Ort": "Zürich", "Website": "www.01bar.ch"}, {"Restaurant": "1001", "Adresse": "Niederdorfstrasse 4", "PLZ": "8001", "Ort": "Zürich", "Website": ""}, {"Restaurant": "1001 Take Away", "Adresse": "Niederdorfstrasse 49", "PLZ": "8001", "Ort": "Zürich", "Website": ""}, {"Restaurant": "107.zuerich", "Adresse": "Weinbergstrasse 107", "PLZ": "8006", "Ort": "Zürich", "Website": ""}, {"Restaurant": "169 West", "Adresse": "Weststrasse 169", "PLZ": "8003", "Ort": "Zürich", "Website": "www.169west.ch"}, {"Restaurant": "1777 Kaffee Restaurant Bar", "Adresse": "Im Schmiedenhof 10", "PLZ": "4001", "Ort": "Basel", "Website": "www.1777.ch"}, {"Restaurant": "1982-Foodtruck GmbH", "Adresse": "Badenerstrasse 36", "PLZ": "8104", "Ort": "Weiningen ZH", "Website": "www.1982-foodtruck.ch"}, {"Restaurant": "1A Genuss", "Adresse": "Claridenstrasse 8", "PLZ": "8002", "Ort": "Zürich", "Website": ""}, {"Restaurant": "1KOMMA7", "Adresse": "Selnaustrasse 2", "PLZ": "8001", "Ort": "Zürich", "Website": "https://1komma7.ch/"}, {"Restaurant": "2.Akt", "Adresse": "Nüschelerstrasse 1", "PLZ": "8001", "Ort": "Zürich", "Website": "www.2akt.ch"}, {"Restaurant": "20/20 by Mövenpick Wein Bar", "Adresse": "Bahnhofstrasse 8", "PLZ": "8630", "Ort": "Rüti ZH", "Website": "www.wein-bar.ch"}, {"Restaurant": "3 mens kebab", "Adresse": "Freischützgasse 1", "PLZ": "8004", "Ort": "Zürich", "Website": ""}, {"Restaurant": "3 Mens Kebab", "Adresse": "Obere Bahnhofstrasse 58b", "PLZ": "8640", "Ort": "Rapperswil SG", "Website": "www.3menskebab.ch"}, {"Restaurant": "3 Mens Kebab", "Adresse": "Heinrichstrasse 262", "PLZ": "8005", "Ort": "Zürich", "Website": "https://www.3menskebab.ch/"}, {"Restaurant": "4. Akt", "Adresse": "Im Städtle 44", "PLZ": "9490", "Ort": "Vaduz", "Website": "www.4akt.ch"}, {"Restaurant": "44-Café im Hof", "Adresse": "Luisenstrasse 43", "PLZ": "8005", "Ort": "Zürich", "Website": "www.44-cafeimhof.li"}, {"Restaurant": "4Leoni dal 1995", "Adresse": "General Guisan-Strasse 4", "PLZ": "6300", "Ort": "Zug", "Website": "www.4leoni.ch"}, {"Restaurant": "67 Sixtyseven Sportsbar", "Adresse": "Steinackerstrasse 35", "PLZ": "8302", "Ort": "Kloten", "Website": ""}, {"Restaurant": "7 Pasta Pizzakurier", "Adresse": "Wartstrasse 32", "PLZ": "8400", "Ort": "Winterthur", "Website": "www.7pasta.ch"}, {"Restaurant": "7030", "Adresse": "Zentralstrasse 4", "PLZ": "8304", "Ort": "Wallisellen", "Website": ""}, {"Restaurant": "8304 | Altes Feuerwehrgebäude", "Adresse": "Industriepark 1-3", "PLZ": "8610", "Ort": "Uster", "Website": "www.8304.restaurant"}, {"Restaurant": "8610 im Merwerk", "Adresse": "Friedhofstrasse 3a", "PLZ": "8610", "Ort": "Uster", "Website": "https://www.werkheim-uster.ch/"}, {"Restaurant": "8610 Restaurant", "Adresse": "Rheingasse 8", "PLZ": "4058", "Ort": "Basel", "Website": "www.8610restaurant.ch"}, {"Restaurant": "8-Bar", "Adresse": "Bederstrasse 99", "PLZ": "8002", "Ort": "Zürich", "Website": "www.8-bar.eu"}, {"Restaurant": "99", "Adresse": "Limmatstrasse 189", "PLZ": "8005", "Ort": "Zürich", "Website": "www.ristorante-99.ch"}, {"Restaurant": "A Fatt", "Adresse": "Place de Cornavin 3", "PLZ": "1201", "Ort": "Genève", "Website": ""}, {"Restaurant": "a mo'", "Adresse": "Lochackerstrasse 6", "PLZ": "8424", "Ort": "Embrach", "Website": "www.autogrill.ch"}, {"Restaurant": "A Modo Mio", "Adresse": "General-Guisan-Strasse 1", "PLZ": "8400", "Ort": "Winterthur", "Website": ""}, {"Restaurant": "A Modo Mio", "Adresse": "Rue de la Confédération 5", "PLZ": "1204", "Ort": "Genève", "Website": ""}, {"Restaurant": "A. Pougnier", "Adresse": "Gare Cornavin Aile ouest", "PLZ": "1201", "Ort": "Genève", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Rue John-Grasset 10", "PLZ": "1205", "Ort": "Genève", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Rue Saint-Victor 34", "PLZ": "1227", "Ort": "Carouge GE", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Place du Bourg-de-Four 2", "PLZ": "1204", "Ort": "Genève", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Place de Chevelu 6", "PLZ": "1201", "Ort": "Genève", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Route de Genève 106", "PLZ": "1226", "Ort": "Thônex", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Gare Cornavin Aile est", "PLZ": "1201", "Ort": "Genève", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A. Pougnier", "Adresse": "Wolfackerweg 10", "PLZ": "3063", "Ort": "Ittigen", "Website": "www.pougnier-geneve.ch"}, {"Restaurant": "A1 Hotel- und Restaurant", "Adresse": "Bändliweg 20", "PLZ": "8048", "Ort": "Zürich", "Website": "www.a1grauholz.ch"}, {"Restaurant": "A1 Move (Eldora)", "Adresse": "Oberfeldstrasse 14", "PLZ": "8302", "Ort": "Kloten", "Website": "www.eldora-a1move.ch"}, {"Restaurant": "A-186 Catering", "Adresse": "Bahnhofstrasse 78", "PLZ": "5000", "Ort": "Aarau", "Website": ""}, {"Restaurant": "Aarauerstube", "Adresse": "Aarbergergasse 40", "PLZ": "3011", "Ort": "Bern", "Website": ""}, {"Restaurant": "Aarbergerhof", "Adresse": "Wildauplatz", "PLZ": "4600", "Ort": "Olten", "Website": ""}, {"Restaurant": "Aarebistro", "Adresse": "Hohlstrasse 43", "PLZ": "8004", "Ort": "Zürich", "Website": ""}, {"Restaurant": "Aargauerhof", "Adresse": "Frohburgstrasse 2", "PLZ": "4600", "Ort": "Olten", "Website": "www.restaurant-aargauerhof.ch"}, {"Restaurant": "Aarhof", "Adresse": "Schützenmattweg 3", "PLZ": "4600", "Ort": "Olten", "Website": "www.aarhof.ch"}, {"Restaurant": "Aaria Catering (EHC Olten)", "Adresse": "Bruggerstrasse 72", "PLZ": "5400", "Ort": "Baden", "Website": ""}, {"Restaurant": "ABB Restaurant (ZFV)", "Adresse": "Avenue du Léman 67", "PLZ": "1025", "Ort": "St-Sulpice VD", "Website": "www.zfv.ch"}, {"Restaurant": "Abordage", "Adresse": "Rue de la Place-d’Armes 3", "PLZ": "2000", "Ort": "Neuchâtel", "Website": "www.abordage-restaurant.ch"}];
+        let userCoords = null;
+
+        // --- Init ---
+        // Check if data was pre-injected
+        window.addEventListener('DOMContentLoaded', () => {
+            if (appData.length > 0) {
+                console.log("Found pre-loaded data:", appData.length);
+                initApp();
+            }
+        });
+
+        // Drag & Drop
+        const dropZone = document.getElementById('uploadScreen');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('active'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer.files), false);
+
+        function handleFile(files) {
+            if (!files.length) return;
+            const file = files[0];
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function (results) {
+                    if (results.data && results.data.length > 0) {
+                        // Normalize keys if needed or just assume structure
+                        appData = results.data.map(item => ({
+                            ...item,
+                            // Clean keys
+                            Restaurant: item.Restaurant || item.Name || "Unknown",
+                            Adresse: item.Adresse || item.Address || "",
+                            PLZ: item.PLZ || item.Zip || "",
+                            Ort: item.Ort || item.City || "",
+                            cuisine: null,
+                            lat: null,
+                            lon: null,
+                            walkingTime: 999
+                        }));
+
+                        initApp();
+                    }
+                },
+                error: function (err) {
+                    alert("Error parsing CSV: " + err.message);
+                }
+            });
+        }
+
+        function initApp() {
+            document.getElementById('uploadScreen').hidden = true;
+            document.getElementById('appContent').hidden = false;
+            document.querySelector('#stats').style.display = 'inline-block';
+            updateTable();
+
+            // Auto-run enrichment if address is empty (just to get cuisines) 
+            // Or wait for user? Let's prompt user or auto-enrich top 50
+            document.getElementById('statusBar').textContent = `Loaded ${appData.length} places. Enter address to calc time.`;
+            document.querySelector('#stats').textContent = `${appData.length} Places`;
+
+            // Start background geocoding for rows without lat/lon (throttled)
+            processQueue();
+        }
+
+        async function enrichData() {
+            const address = document.getElementById('addressInput').value;
+            if (!address) {
+                alert("Please enter a location");
+                return;
+            }
+
+            document.getElementById('statusBar').textContent = "Finding your location...";
+
+            try {
+                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.features.length) {
+                    const c = data.features[0].geometry.coordinates;
+                    userCoords = { lon: c[0], lat: c[1] };
+                    document.getElementById('statusBar').textContent = `Location found. Updating distances...`;
+                    updateDistances();
+                } else {
+                    alert("Location not found");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error finding location");
+            }
+        }
+
+        function updateDistances() {
+            if (!userCoords) return;
+
+            appData.forEach(row => {
+                if (row.lat && row.lon) {
+                    const distKm = getDistanceFromLatLonInKm(userCoords.lat, userCoords.lon, row.lat, row.lon);
+                    // 5km/h = 12 min/km
+                    row.walkingTime = Math.round(distKm * 12);
+                }
+            });
+
+            // Sort by walking time
+            appData.sort((a, b) => a.walkingTime - b.walkingTime);
+            updateTable();
+            document.getElementById('statusBar').textContent = "Distances updated.";
+        }
+
+        // --- Background Enrich Queue ---
+        let queueIndex = 0;
+        let isProcessing = false;
+
+        async function processQueue() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const batchSize = 1; // 1 concurrent request
+            const delay = 1100; // 1.1s delay to respect Photon rate limits
+
+            while (queueIndex < appData.length) {
+                const row = appData[queueIndex];
+
+                // Skip if already has data
+                if (row.lat) {
+                    queueIndex++;
+                    continue;
+                }
+
+                // Construct address query
+                const query = `${row.Restaurant}, ${row.Adresse}, ${row.Ort}`;
+                // Clean query to be safer
+                const cleanQuery = `${row.Adresse} ${row.Ort}`;
+
+                renderStatus(`Enriching item ${queueIndex + 1}/${appData.length}...`);
+
+                try {
+                    // Try specific query first
+                    let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanQuery)}&limit=1`;
+                    let res = await fetch(url);
+                    let data = await res.json();
+
+                    if (data.features.length) {
+                        const feat = data.features[0];
+                        row.lat = feat.geometry.coordinates[1];
+                        row.lon = feat.geometry.coordinates[0];
+
+                        // Try to extract cuisine
+                        let cuisine = feat.properties.osm_value;
+                        if (['restaurant', 'fast_food', 'cafe'].includes(cuisine)) {
+                            cuisine = feat.properties.cuisine || feat.properties.name || cuisine;
+                        }
+                        row.cuisine = cuisine ? capitalize(cuisine) : "International";
+
+                        // If we have user coords, update distance too
+                        if (userCoords) {
+                            const distKm = getDistanceFromLatLonInKm(userCoords.lat, userCoords.lon, row.lat, row.lon);
+                            row.walkingTime = Math.round(distKm * 12);
+                        }
+                    } else {
+                        row.cuisine = "International"; // Default
+                    }
+
+                    // Update UI every 5 items
+                    if (queueIndex % 5 === 0) updateTable(true); // true = preserve simple list update
+
+                } catch (e) {
+                    console.warn("Geocode error", e);
+                }
+
+                queueIndex++;
+                await new Promise(r => setTimeout(r, delay));
+            }
+
+            renderStatus("Enrichment complete.");
+            updateTable();
+            isProcessing = false;
+        }
+
+        function renderStatus(msg) {
+            document.getElementById('statusBar').textContent = msg;
+        }
+
+        // --- Table Rendering ---
+        function updateTable(skipSort = false) {
+            const tbody = document.getElementById('tableBody');
+            const filter = document.getElementById('searchInput').value.toUpperCase();
+
+            let html = '';
+
+            appData.forEach(item => {
+                // Search Filter
+                const txt = (item.Restaurant + item.Adresse + (item.cuisine || "")).toUpperCase();
+                if (filter && txt.indexOf(filter) === -1) return;
+
+                // Generate Map Link
+                const mapDest = encodeURIComponent(`${item.Adresse}, ${item.Ort}`);
+                const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapDest}`;
+
+                html += `
+                <tr>
+                    <td class="col-restaurant">${item.Restaurant}</td>
+                    <td>${item.Adresse}, ${item.PLZ}</td>
+                    <td><span class="tag ${item.cuisine ? 'tag-cuisine' : ''}">${item.cuisine || 'Loading...'}</span></td>
+                    <td><span class="time-badge">${item.walkingTime === 999 ? '?' : item.walkingTime + ' min'}</span></td>
+                    <td class="actions">
+                        <a href="${item.Website || '#'}" target="_blank" ${!item.Website ? 'style="opacity:0.5;pointer-events:none"' : ''}>Web</a>
+                        <a href="${mapUrl}" target="_blank">Map</a>
+                    </td>
+                </tr>
+            `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // --- Utils ---
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
+
+        function capitalize(s) { return s && s[0].toUpperCase() + s.slice(1); }
+
+        window.filterTable = updateTable;
+
+        // Simple sort (by column index) mechanism for table headers
+        window.sortTable = function (n) {
+            // Just re-sort appData and re-render
+            // 0=Name, 1=Addr, 2=Cuisine, 3=Time
+            const keys = ['Restaurant', 'Adresse', 'cuisine', 'walkingTime'];
+            const key = keys[n];
+
+            appData.sort((a, b) => {
+                let valA = a[key] || "";
+                let valB = b[key] || "";
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return -1;
+                if (valA > valB) return 1;
+                return 0;
+            });
+
+            updateTable();
+        }
+    </script>
+
+</body>
+
+</html>
